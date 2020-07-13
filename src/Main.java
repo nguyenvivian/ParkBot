@@ -21,14 +21,22 @@ public class Main {
 		//sleep for x seconds
 		Tesseract tesseract = new Tesseract(); 
 		tesseract.setDatapath("/Users/viviannguyen/eclipse-workspace/ParkBot/src/Tess4J/tessdata/"); 
-		//filter out letters that are not 
 		File image = new File("/Users/viviannguyen/eclipse-workspace/ParkBot/src/Tess4J/tessdata/1handicap1ar.png");
+		//watch directory for changes
+		//if file created,
+		//process that file
+		
 		process_image(tesseract, image);
 		        	
     }
 	
 	private static void process_image(Tesseract tesseract, File image) {
         try { 
+        	//get text from image tesseract ocr
+        	//filter out text and clean up results
+        	//
+        	//add capacity to database - additionally: verify spots added actually exist to reduce false positives
+        	
         	String text = tesseract.doOCR(image); 
             text = filter_results(text);
             System.out.print(text); 
