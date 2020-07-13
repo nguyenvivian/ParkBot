@@ -26,5 +26,6 @@
 	<classpathentry kind="lib" path="/Users/viviannguyen/eclipse-workspace/ParkBot/src/Tess4J/lib/pdfbox-tools-2.0.9.jar"/>
 	<classpathentry kind="lib" path="/Users/viviannguyen/eclipse-workspace/ParkBot/src/Tess4J/lib/slf4j-api-1.7.25.jar"/>
 	<classpathentry kind="lib" path="/Users/viviannguyen/eclipse-workspace/ParkBot/src/Tess4J/lib/xmlgraphics-commons-1.5.jar"/>
+	<classpathentry kind="lib" path="/Users/viviannguyen/eclipse-workspace/ParkBot/src/mysql-connector-java-8.0.20.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
