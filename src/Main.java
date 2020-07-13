@@ -5,17 +5,16 @@ import net.sourceforge.tess4j.TesseractException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.sql.ResultSet;
 
 public class Main {
 	public static void main(String[] args) 
     { 
-	    try {
-			Class.forName("com.mysql.cj.jdbc.Driver");
-			Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/sys?serverTimezone=US/Pacific", "root", "sql99server");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	    
+
 		//clock have picture taken every something seconds
 		//increment file name by 1
 		//sleep for x seconds
@@ -36,10 +35,11 @@ public class Main {
         	//filter out text and clean up results
         	//
         	//add capacity to database - additionally: verify spots added actually exist to reduce false positives
-        	
-        	String text = tesseract.doOCR(image); 
-            text = filter_results(text);
-            System.out.print(text); 
+        	for (int i = 0; i< 24; ++i) {
+        		String text = tesseract.doOCR(image); 
+            	text = filter_results(text);
+            	add_database(text,i);
+        	}
            
         }
     	catch (TesseractException e) { 
@@ -50,6 +50,50 @@ public class Main {
 	
 	private static String filter_results(String text) {
 		return text.replaceAll("[^A-GKM-Z]+", "");
+	}
+	
+	private static void add_database(String text, Integer testOffset) {
+	    try {
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/sys?serverTimezone=US/Pacific", "root", "sql99server");
+			//count each indicator
+			//match indicator to spot type
+		
+			HashMap<String, Integer> indicatorCount = new HashMap<String, Integer>();
+		
+			String[] textToSort = text.split("");
+			for (String spot: textToSort) {
+				if (!indicatorCount.containsKey(spot)) {
+					indicatorCount.put(spot,1);
+				}else {
+					//add key as the proper id
+					indicatorCount.put(spot, indicatorCount.get(spot)+1);
+				}
+			}
+			
+			//result set + timestamp + lot id
+			System.out.println(indicatorCount);
+			for(Entry<String, Integer> entry : indicatorCount.entrySet()) {		
+				Statement statement = connection.createStatement();
+				ResultSet resultSet= statement.executeQuery("SELECT * FROM SPOT_TYPE WHERE INDICATOR="+"\""+entry.getKey()+"\"");
+				resultSet.next();
+				//must o difference between num spots in the lot - lots filled 
+				//error handling 
+				//test localdatetime + 5
+				Statement postStatement = connection.createStatement();
+				System.out.println("INSERT INTO LOG (TIMESTAMP, LOT_ID, SPOT_TYPE_ID, NUM_FILLED) VALUES ("+"\""+LocalDateTime.now().plusMinutes(testOffset*5)+"\","+1+","+resultSet.getInt("SPOT_TYPE_ID")+","+entry.getValue()+")");
+				statement.executeUpdate("INSERT INTO LOG (TIMESTAMP, LOT_ID, SPOT_TYPE_ID, NUM_FILLED) VALUES ("+"\""+LocalDateTime.now().plusMinutes(testOffset*5)+"\","+1+","+resultSet.getInt("SPOT_TYPE_ID")+","+entry.getValue()+")");
+				
+				resultSet.close();
+				statement.close();
+			}
+
+			connection.close();
+	    }
+	    catch (Exception e) {
+			e.printStackTrace();
+		}
+	    
 	}
 	
 	
