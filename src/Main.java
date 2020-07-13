@@ -24,8 +24,10 @@ public class Main {
 	private static void process_image(Tesseract tesseract, File image) {
         try { 
         	String text = tesseract.doOCR(image); 
+            text = filter_results(text);
             System.out.print(text); 
-            filter_results(text);
+           
+
 
         }
     	catch (TesseractException e) { 
@@ -34,8 +36,7 @@ public class Main {
 		//addto db
 	}
 	
-	private static void filter_results(String text) {
-		text = text.replaceAll("[^A-GKM-Z]+", "");
-		System.out.println(text);
+	private static String filter_results(String text) {
+		return text.replaceAll("[^A-GKM-Z]+", "");
 	}
 }
