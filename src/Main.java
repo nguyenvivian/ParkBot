@@ -1,5 +1,12 @@
-import java.io.File; 
-  
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import static java.nio.file.StandardWatchEventKinds.*;
+
 import net.sourceforge.tess4j.Tesseract; 
 import net.sourceforge.tess4j.TesseractException; 
 import java.sql.Connection;
@@ -15,26 +22,55 @@ public class Main {
 	public static void main(String[] args) 
     { 
 
-		//clock have picture taken every something seconds
-		//increment file name by 1
-		//sleep for x seconds
 		Tesseract tesseract = new Tesseract(); 
 		tesseract.setDatapath("/Users/viviannguyen/eclipse-workspace/ParkBot/src/Tess4J/tessdata/"); 
-		File image = new File("/Users/viviannguyen/eclipse-workspace/ParkBot/src/Tess4J/tessdata/1handicap1ar.png");
+		
 		//watch directory for changes
 		//if file created,
 		//process that file
+		WatchService watcher;
+		try {
+			watcher = FileSystems.getDefault().newWatchService();
+		Path directory = FileSystems.getDefault().getPath("/Users/viviannguyen/eclipse-workspace/ParkBot/src/Tess4J/tessdata/img");
+			for(;;) {
+				WatchKey key = directory.register(watcher, ENTRY_CREATE);
+//				
+				try {
+					key = watcher.take();
+				}catch(Exception e) {
+					return;
+				}
+			   for (WatchEvent<?> event: key.pollEvents()) {
+			        WatchEvent.Kind<?> kind = event.kind();
+			        if (kind == OVERFLOW) {
+			            continue;
+			        }
+			        WatchEvent<Path> ev = (WatchEvent<Path>)event;
+			        Path filename = ev.context();
+			        System.out.println(filename);
+			   }
+			    boolean valid = key.reset();
+			    if (!valid) {
+			        break;
+			    }
+			}
+			
+		}catch(Exception e) {
+            e.printStackTrace(); 
+          
+		}
 		
-		process_image(tesseract, image);
-		        	
-    }
+			File image = new File("/Users/viviannguyen/eclipse-workspace/ParkBot/src/Tess4J/tessdata/img/1handicap1ar.png");
+	
+			process_image(tesseract, image);
+    }        	
+    
 	
 	private static void process_image(Tesseract tesseract, File image) {
         try { 
         	//get text from image tesseract ocr
         	//filter out text and clean up results
-        	//
-        	//add capacity to database - additionally: verify spots added actually exist to reduce false positives
+       
     //    	for (int i = 0; i< 24; ++i) {
         		String text = tesseract.doOCR(image); 
             	text = filter_results(text);
@@ -45,7 +81,6 @@ public class Main {
     	catch (TesseractException e) { 
             e.printStackTrace(); 
         } 
-		//addto db
 	}
 	
 	private static String filter_results(String text) {
@@ -56,8 +91,6 @@ public class Main {
 	    try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			Connection connection = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/sys?serverTimezone=US/Pacific", "root", "sql99server");
-			//count each indicator
-			//match indicator to spot type
 		
 			HashMap<String, Integer> indicatorCount = new HashMap<String, Integer>();
 		
@@ -66,7 +99,6 @@ public class Main {
 				if (!indicatorCount.containsKey(spot)) {
 					indicatorCount.put(spot,1);
 				}else {
-					//add key as the proper id
 					indicatorCount.put(spot, indicatorCount.get(spot)+1);
 				}
 			}
@@ -89,11 +121,9 @@ public class Main {
 				statement.executeUpdate("INSERT INTO LOG (TIMESTAMP, LOT_ID, SPOT_TYPE_ID, NUM_FILLED) VALUES ("+"\""+LocalDateTime.now().plusMinutes(testOffset*5)+"\","+1+","+spotTypeId+","+spotsFilled+")");
 
 				numSpotSet.close();
-
 				statement.close();
 
 			}
-
 			connection.close();
 	    }
 	    catch (Exception e) {
