@@ -35,11 +35,11 @@ public class Main {
         	//filter out text and clean up results
         	//
         	//add capacity to database - additionally: verify spots added actually exist to reduce false positives
-        	for (int i = 0; i< 24; ++i) {
+    //    	for (int i = 0; i< 24; ++i) {
         		String text = tesseract.doOCR(image); 
             	text = filter_results(text);
-            	add_database(text,i);
-        	}
+            	add_database(text,0);
+  //      	}
            
         }
     	catch (TesseractException e) { 
@@ -71,21 +71,27 @@ public class Main {
 				}
 			}
 			
-			//result set + timestamp + lot id
 			System.out.println(indicatorCount);
 			for(Entry<String, Integer> entry : indicatorCount.entrySet()) {		
 				Statement statement = connection.createStatement();
-				ResultSet resultSet= statement.executeQuery("SELECT * FROM SPOT_TYPE WHERE INDICATOR="+"\""+entry.getKey()+"\"");
-				resultSet.next();
-				//must o difference between num spots in the lot - lots filled 
-				//error handling 
-				//test localdatetime + 5
-				Statement postStatement = connection.createStatement();
-				System.out.println("INSERT INTO LOG (TIMESTAMP, LOT_ID, SPOT_TYPE_ID, NUM_FILLED) VALUES ("+"\""+LocalDateTime.now().plusMinutes(testOffset*5)+"\","+1+","+resultSet.getInt("SPOT_TYPE_ID")+","+entry.getValue()+")");
-				statement.executeUpdate("INSERT INTO LOG (TIMESTAMP, LOT_ID, SPOT_TYPE_ID, NUM_FILLED) VALUES ("+"\""+LocalDateTime.now().plusMinutes(testOffset*5)+"\","+1+","+resultSet.getInt("SPOT_TYPE_ID")+","+entry.getValue()+")");
+				ResultSet spotSet= statement.executeQuery("SELECT * FROM SPOT_TYPE WHERE INDICATOR="+"\""+entry.getKey()+"\"");
+				spotSet.next();
+				int spotTypeId = spotSet.getInt("SPOT_TYPE_ID");
+				spotSet.close();
 				
-				resultSet.close();
+				ResultSet numSpotSet= statement.executeQuery("SELECT * FROM LOT_SPOT_RELATIONSHIP WHERE LOT_ID = 1 && SPOT_TYPE_ID ="+spotTypeId);
+				numSpotSet.next();
+				
+				int spotsFilled = numSpotSet.getInt("MAX_CAPACITY") - entry.getValue();
+				//error handling 
+				
+				System.out.println("INSERT INTO LOG (TIMESTAMP, LOT_ID, SPOT_TYPE_ID, NUM_FILLED) VALUES ("+"\""+LocalDateTime.now().plusMinutes(testOffset*5)+"\","+1+","+spotTypeId+","+spotsFilled+")");
+				statement.executeUpdate("INSERT INTO LOG (TIMESTAMP, LOT_ID, SPOT_TYPE_ID, NUM_FILLED) VALUES ("+"\""+LocalDateTime.now().plusMinutes(testOffset*5)+"\","+1+","+spotTypeId+","+spotsFilled+")");
+
+				numSpotSet.close();
+
 				statement.close();
+
 			}
 
 			connection.close();
