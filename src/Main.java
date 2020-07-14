@@ -79,7 +79,7 @@ public class Main {
 				int spotTypeId = spotSet.getInt("SPOT_TYPE_ID");
 				spotSet.close();
 				
-				ResultSet numSpotSet= statement.executeQuery("SELECT * FROM LOT_SPOT_RELATIONSHIP WHERE LOT_ID = 1 && SPOT_TYPE_ID ="+spotTypeId);
+				ResultSet numSpotSet= statement.executeQuery("SELECT * FROM LOT_SPOT_RELATIONSHIP WHERE LOT_ID = 1 AND SPOT_TYPE_ID ="+spotTypeId);
 				numSpotSet.next();
 				
 				int spotsFilled = numSpotSet.getInt("MAX_CAPACITY") - entry.getValue();
